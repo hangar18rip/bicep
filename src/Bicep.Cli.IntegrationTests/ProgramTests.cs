@@ -8,6 +8,8 @@ using System.Linq;
 using Bicep.Cli.UnitTests;
 using Bicep.Core.Analyzers.Linter.Rules;
 using Bicep.Core.FileSystem;
+using Bicep.Core.Modules;
+using Bicep.Core.Registry;
 using Bicep.Core.Samples;
 using Bicep.Core.Semantics;
 using Bicep.Core.Syntax;
@@ -363,7 +365,7 @@ output myOutput string = 'hello!'
 
         private static IEnumerable<string> GetAllDiagnostics(string bicepFilePath)
         {
-            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(BicepTestConstants.FileResolver, new Workspace(), PathHelper.FilePathToFileUrl(bicepFilePath));
+            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(BicepTestConstants.FileResolver, new ModuleRegistryDispatcher(BicepTestConstants.FileResolver), new Workspace(), PathHelper.FilePathToFileUrl(bicepFilePath));
             var compilation = new Compilation(TestTypeHelper.CreateEmptyProvider(), syntaxTreeGrouping);
 
             var output = new List<string>();
