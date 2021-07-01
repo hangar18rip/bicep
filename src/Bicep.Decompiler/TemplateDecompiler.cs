@@ -55,8 +55,7 @@ namespace Bicep.Decompiler
                 {
                     var moduleRelativePath = SyntaxHelper.TryGetModulePath(module, out _);
                     if (moduleRelativePath == null ||
-                        // TODO: Does this need to be aware of the registry?
-                        !LocalModuleReference.ValidateLocalFilePath(moduleRelativePath, out _) ||
+                        !LocalModuleReference.Validate(moduleRelativePath, out _) ||
                         !Uri.TryCreate(bicepUri, moduleRelativePath, out var moduleUri))
                     {
                         // Do our best, but keep going if we fail to resolve a module file

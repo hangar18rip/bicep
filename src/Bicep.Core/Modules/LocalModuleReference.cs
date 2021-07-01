@@ -35,7 +35,7 @@ namespace Bicep.Core.Modules
 
         public static LocalModuleReference? TryParse(string rawValue, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
         {
-            if(!ValidateLocalFilePath(rawValue, out failureBuilder))
+            if(!Validate(rawValue, out failureBuilder))
             {
                 return null;
             }
@@ -43,7 +43,7 @@ namespace Bicep.Core.Modules
             return new(rawValue);
         }
 
-        public static bool ValidateLocalFilePath(string pathName, [NotNullWhen(false)] out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
+        public static bool Validate(string pathName, [NotNullWhen(false)] out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
         {
             if (pathName.Length == 0)
             {

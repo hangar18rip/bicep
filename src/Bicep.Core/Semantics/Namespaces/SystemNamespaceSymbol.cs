@@ -415,7 +415,7 @@ namespace Bicep.Core.Semantics.Namespaces
 
         private static Uri? GetFileUriWithDiagnostics(IBinder binder, IFileResolver fileResolver, IDiagnosticWriter diagnostics, string filePath, SyntaxBase filePathArgument)
         {
-            if (!LocalModuleReference.ValidateLocalFilePath(filePath, out var validateFilePathFailureBuilder))
+            if (!LocalModuleReference.Validate(filePath, out var validateFilePathFailureBuilder))
             {
                 diagnostics.Write(validateFilePathFailureBuilder.Invoke(DiagnosticBuilder.ForPosition(filePathArgument)));
                 return null;
