@@ -13,13 +13,14 @@ namespace Bicep.Core.Registry
 {
     public class ModuleRegistryDispatcher : IModuleRegistryDispatcher
     {
-        private readonly ImmutableDictionary<string, IModuleRegistry> registries;
-        private readonly ImmutableDictionary<Type, IModuleRegistry> referenceTypes;
+        private readonly ImmutableDictionary<string, IModuleRegistry> schemeToRegistry;
+        private readonly ImmutableDictionary<Type, IModuleRegistry> referenceTypeToRegistry;
+        private readonly ImmutableDictionary<Type, string> referenceTypeToScheme;
 
         public ModuleRegistryDispatcher(IFileResolver fileResolver)
         {
-            (this.registries, this.referenceTypes) = Initialize(fileResolver);
-            this.AvailableSchemes = this.registries.Keys.OrderBy(s => s).ToImmutableArray();
+            (this.schemeToRegistry, this.referenceTypeToRegistry, this.referenceTypeToScheme) = Initialize(fileResolver);
+            this.AvailableSchemes = this.schemeToRegistry.Keys.OrderBy(s => s).ToImmutableArray();
         }
 
         public IEnumerable<string> AvailableSchemes { get; }
@@ -31,12 +32,12 @@ namespace Bicep.Core.Registry
             {
                 case 1:
                     // local path reference
-                    return registries[string.Empty].TryParseModuleReference(parts[0], out failureBuilder);
+                    return schemeToRegistry[string.Empty].TryParseModuleReference(parts[0], out failureBuilder);
 
                 case 2:
                     var scheme = parts[0];
 
-                    if (registries.TryGetValue(scheme, out var registry))
+                    if (schemeToRegistry.TryGetValue(scheme, out var registry))
                     {
                         // the scheme is recognized
                         var rawValue = parts[1];
@@ -54,10 +55,21 @@ namespace Bicep.Core.Registry
             }
         }
 
+        public string GetFullyQualifiedReference(ModuleReference reference)
+        {
+            Type refType = reference.GetType();
+            if (this.referenceTypeToScheme.TryGetValue(refType, out var scheme))
+            {
+                return $"{scheme}:{reference}";
+            }
+
+            throw new NotImplementedException($"Unexpected module reference type '{refType.Name}'");
+        }
+
         public bool IsModuleInitRequired(ModuleReference reference)
         {
             Type refType = reference.GetType();
-            if (this.referenceTypes.TryGetValue(refType, out var registry))
+            if (this.referenceTypeToRegistry.TryGetValue(refType, out var registry))
             {
                 return registry.IsModuleInitRequired(reference);
             }
@@ -68,7 +80,7 @@ namespace Bicep.Core.Registry
         public Uri? TryGetLocalModuleEntryPointPath(Uri parentModuleUri, ModuleReference reference, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
         {
             Type refType = reference.GetType();
-            if (this.referenceTypes.TryGetValue(refType, out var registry))
+            if (this.referenceTypeToRegistry.TryGetValue(refType, out var registry))
             {
                 return registry.TryGetLocalModuleEntryPointPath(parentModuleUri, reference, out failureBuilder);
             }
@@ -79,28 +91,30 @@ namespace Bicep.Core.Registry
         public void InitModules(IEnumerable<ModuleReference> references)
         {
             var lookup = references.ToLookup(@ref => @ref.GetType());
-            foreach (var referenceType in this.referenceTypes.Keys.Where(refType => lookup.Contains(refType)))
+            foreach (var referenceType in this.referenceTypeToRegistry.Keys.Where(refType => lookup.Contains(refType)))
             {
-                this.referenceTypes[referenceType].InitModules(lookup[referenceType]);
+                this.referenceTypeToRegistry[referenceType].InitModules(lookup[referenceType]);
             }
         }
 
         // TODO: Once we have some sort of dependency injection in the CLI, this could be simplified
-        private static (ImmutableDictionary<string, IModuleRegistry>, ImmutableDictionary<Type, IModuleRegistry>) Initialize(IFileResolver fileResolver)
+        private static (ImmutableDictionary<string, IModuleRegistry>, ImmutableDictionary<Type, IModuleRegistry>, ImmutableDictionary<Type, string>) Initialize(IFileResolver fileResolver)
         {
             var mapByString = ImmutableDictionary.CreateBuilder<string, IModuleRegistry>();
             var mapByType = ImmutableDictionary.CreateBuilder<Type, IModuleRegistry>();
+            var schemeMap = ImmutableDictionary.CreateBuilder<Type, string>();
 
             void AddRegistry(string scheme, Type moduleRefType, IModuleRegistry instance)
             {
                 mapByString.Add(scheme, instance);
                 mapByType.Add(moduleRefType, instance);
+                schemeMap.Add(moduleRefType, scheme);
             }
 
             AddRegistry(string.Empty, typeof(LocalModuleReference), new LocalModuleRegistry(fileResolver));
             AddRegistry("oci", typeof(OciArtifactModuleReference), new OciModuleRegistry(fileResolver));
 
-            return (mapByString.ToImmutable(), mapByType.ToImmutable());
+            return (mapByString.ToImmutable(), mapByType.ToImmutable(), schemeMap.ToImmutable());
         }
     }
 }

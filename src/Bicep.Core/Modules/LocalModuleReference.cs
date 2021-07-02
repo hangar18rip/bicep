@@ -33,6 +33,8 @@ namespace Bicep.Core.Modules
 
         public override int GetHashCode() => PathComparer.GetHashCode(this.Path);
 
+        public override string ToString() => this.Path;
+
         public static LocalModuleReference? TryParse(string rawValue, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
         {
             if(!Validate(rawValue, out failureBuilder))

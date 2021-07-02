@@ -45,6 +45,8 @@ namespace Bicep.Core.Modules
             return hash.ToHashCode();
         }
 
+        public override string ToString() => $"{this.PackageId}@{this.Version}";
+
         public static NugetModuleReference? TryParse(string rawValue, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
         {
             var parts = rawValue.Split('@', 2, StringSplitOptions.None);

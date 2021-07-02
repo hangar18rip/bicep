@@ -1104,6 +1104,11 @@ namespace Bicep.Core.Diagnostics
                 TextSpan,
                 "BCP188",
                 $"The specified OCI artifact reference \"{badRef}\" is not valid. Specify a reference in the format of \"oci:<artifact uri>:<tag>\".");
+
+            public ErrorDiagnostic ModuleRequiresInit(string moduleRef) => new(
+                TextSpan,
+                "BCP189",
+                $"The module with reference \"{moduleRef}\" has not been initialized. Ensure \"bicep init\" is run before or during the build.");
         }
 
         public static DiagnosticBuilderInternal ForPosition(TextSpan span)

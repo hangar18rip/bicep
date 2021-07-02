@@ -6,7 +6,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Bicep.Core.Diagnostics;
 using Bicep.Core.FileSystem;
-using Bicep.Core.Modules;
 using Bicep.Core.Parsing;
 using Bicep.Core.Registry;
 using Bicep.Core.Utils;
@@ -23,6 +22,8 @@ namespace Bicep.Core.Syntax
         private readonly Dictionary<ModuleDeclarationSyntax, SyntaxTree> moduleLookup;
         private readonly Dictionary<ModuleDeclarationSyntax, DiagnosticBuilder.ErrorBuilderDelegate> moduleFailureLookup;
 
+        private readonly HashSet<ModuleDeclarationSyntax> modulesRequiringInit;
+
         // uri -> successfully loaded syntax tree
         private readonly Dictionary<Uri, SyntaxTree> syntaxTrees;
 
@@ -38,6 +39,7 @@ namespace Bicep.Core.Syntax
             {
                 this.moduleLookup = new();
                 this.moduleFailureLookup = new();
+                this.modulesRequiringInit = new();
                 this.syntaxTrees = new();
                 this.syntaxTreeLoadFailures = new();
             }
@@ -45,9 +47,13 @@ namespace Bicep.Core.Syntax
             {
                 this.moduleLookup = new(current.ModuleLookup);
                 this.moduleFailureLookup = new(current.ModuleFailureLookup);
+
+                // TODO: Needs to be recoverable
+                this.modulesRequiringInit = new();
+
                 this.syntaxTrees = current.SyntaxTrees.ToDictionary(tree => tree.FileUri);
 
-                // TODO: can we recover this info too? (have to prevent load failure due to external modules missing from cache)
+                // TODO: can we recover this info too?
                 this.syntaxTreeLoadFailures = new();
             }
         }
@@ -137,6 +143,14 @@ namespace Bicep.Core.Syntax
                 if(moduleReference is null)
                 {
                     moduleFailureLookup[module] = parseReferenceFailureBuilder ?? throw new InvalidOperationException($"Expected {nameof(ModuleRegistryDispatcherExtensions.TryGetModuleReference)} to provide failure diagnostics.");
+                    continue;
+                }
+
+                if(this.dispatcher.IsModuleInitRequired(moduleReference))
+                {
+                    // module is not cached locally
+                    moduleFailureLookup[module] = x => x.ModuleRequiresInit(this.dispatcher.GetFullyQualifiedReference(moduleReference));
+                    modulesRequiringInit.Add(module);
                     continue;
                 }
 
