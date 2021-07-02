@@ -1113,7 +1113,12 @@ namespace Bicep.Core.Diagnostics
             public ErrorDiagnostic ModuleRequiresInit(string moduleRef) => new(
                 TextSpan,
                 "BCP189",
-                $"The module with reference \"{moduleRef}\" has not been downloaded.");
+                $"The contents of the module with reference \"{moduleRef}\" have not been downloaded.");
+
+            public ErrorDiagnostic ModuleInitFailed(string moduleRef, string message) => new(
+                TextSpan,
+                "BCP190",
+                $"Unable to download the contents of the module with reference \"{moduleRef}\": {message}");
         }
 
         public static DiagnosticBuilderInternal ForPosition(TextSpan span)

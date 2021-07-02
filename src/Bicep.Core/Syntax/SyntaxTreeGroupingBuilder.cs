@@ -150,7 +150,7 @@ namespace Bicep.Core.Syntax
                 if(this.dispatcher.IsModuleInitRequired(moduleReference))
                 {
                     // module is not cached locally
-                    moduleFailureLookup[module] = x => x.ModuleRequiresInit(this.dispatcher.GetFullyQualifiedReference(moduleReference));
+                    moduleFailureLookup[module] = x => x.ModuleRequiresInit(moduleReference.FullyQualifiedReference);
                     modulesToInit.Add(module);
                     continue;
                 }

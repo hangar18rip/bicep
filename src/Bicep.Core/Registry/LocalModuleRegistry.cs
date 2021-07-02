@@ -6,6 +6,7 @@ using Bicep.Core.FileSystem;
 using Bicep.Core.Modules;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Bicep.Core.Registry
 {
@@ -35,7 +36,7 @@ namespace Bicep.Core.Registry
             return null;
         }
 
-        public void InitModules(IEnumerable<ModuleReference> reference)
+        public void InitModules(IEnumerable<ModuleReference> reference, ModuleInitErrorDelegate onErrorAction)
         {
             // local modules are already present on the file system
             // and do not require init

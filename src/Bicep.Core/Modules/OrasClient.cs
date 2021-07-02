@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace Bicep.Core.Modules
             this.artifactCachePath = artifactCachePath;
         }
 
-        public void Pull(OciArtifactModuleReference reference)
+        public bool Pull(OciArtifactModuleReference reference, [NotNullWhen(false)] out string? errorMessage)
         {
             string localArtifactPath = GetLocalPackageDirectory(reference);
 
@@ -33,7 +34,6 @@ namespace Bicep.Core.Modules
                     CreateNoWindow = true,
                     ErrorDialog = false,
                     LoadUserProfile = true,
-                    RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
 
@@ -42,19 +42,23 @@ namespace Bicep.Core.Modules
                 }
             };
 
-            var output = new StringBuilder();
-            process.OutputDataReceived += (sender, e) => output.AppendLine(e.Data);
-
             var error = new StringBuilder();
             process.ErrorDataReceived += (sender, e) => error.AppendLine(e.Data);
 
             process.Start();
+
+            process.BeginErrorReadLine();
+
             process.WaitForExit();
 
-            if(process.ExitCode != 0)
+            if(process.ExitCode == 0)
             {
-                throw new InvalidOperationException($"Pull failed\nStdOut: {output}\nStdErr: {error}");
+                errorMessage = null;
+                return true;
             }
+
+            errorMessage = error.ToString().Trim();
+            return false;
         }
 
         public string GetLocalPackageDirectory(OciArtifactModuleReference reference)

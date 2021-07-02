@@ -9,6 +9,8 @@ namespace Bicep.Core.Modules
 {
     public class NugetModuleReference : ModuleReference
     {
+        public const string Scheme = "nuget";
+
         // these exist to keep equals and hashcode implementations in sync
         // NuGet package IDs are case-insensitive
         private static readonly IEqualityComparer<string> PackageIdComparer = StringComparer.OrdinalIgnoreCase;
@@ -45,7 +47,9 @@ namespace Bicep.Core.Modules
             return hash.ToHashCode();
         }
 
-        public override string ToString() => $"{this.PackageId}@{this.Version}";
+        public override string UnqualifiedReference => $"{this.PackageId}@{this.Version}";
+
+        public override string FullyQualifiedReference => this.FormatFullyQualifiedReference(Scheme);
 
         public static NugetModuleReference? TryParse(string rawValue, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
         {

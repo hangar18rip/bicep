@@ -41,11 +41,14 @@ namespace Bicep.Core.Registry
             return GetEntryPointUri(typed);
         }
 
-        public void InitModules(IEnumerable<ModuleReference> references)
+        public void InitModules(IEnumerable<ModuleReference> references, ModuleInitErrorDelegate onErrorAction)
         {
             foreach(var reference in references.OfType<OciArtifactModuleReference>())
             {
-                this.orasClient.Pull(reference);
+                if(!this.orasClient.Pull(reference, out var errorMessage))
+                {
+                    onErrorAction(reference, errorMessage);
+                }
             }
         }
         
