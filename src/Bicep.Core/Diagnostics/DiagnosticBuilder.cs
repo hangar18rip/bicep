@@ -1105,10 +1105,15 @@ namespace Bicep.Core.Diagnostics
                 "BCP188",
                 $"The specified OCI artifact reference \"{badRef}\" is not valid. Specify a reference in the format of \"oci:<artifact uri>:<tag>\".");
 
+            // TODO: This error is context sensitive:
+            // - In CLI, it's permanent and only likely to occur with bicep build --no-init.
+            // - In VS code, it's transient until the background init finishes.
+            //
+            // Should it be split into two separate errors instead?
             public ErrorDiagnostic ModuleRequiresInit(string moduleRef) => new(
                 TextSpan,
                 "BCP189",
-                $"The module with reference \"{moduleRef}\" has not been initialized. Ensure \"bicep init\" is run before or during the build.");
+                $"The module with reference \"{moduleRef}\" has not been downloaded.");
         }
 
         public static DiagnosticBuilderInternal ForPosition(TextSpan span)
