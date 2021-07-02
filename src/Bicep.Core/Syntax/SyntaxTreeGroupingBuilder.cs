@@ -22,7 +22,7 @@ namespace Bicep.Core.Syntax
         private readonly Dictionary<ModuleDeclarationSyntax, SyntaxTree> moduleLookup;
         private readonly Dictionary<ModuleDeclarationSyntax, DiagnosticBuilder.ErrorBuilderDelegate> moduleFailureLookup;
 
-        private readonly HashSet<ModuleDeclarationSyntax> modulesRequiringInit;
+        private readonly HashSet<ModuleDeclarationSyntax> modulesToInit;
 
         // uri -> successfully loaded syntax tree
         private readonly Dictionary<Uri, SyntaxTree> syntaxTrees;
@@ -39,7 +39,7 @@ namespace Bicep.Core.Syntax
             {
                 this.moduleLookup = new();
                 this.moduleFailureLookup = new();
-                this.modulesRequiringInit = new();
+                this.modulesToInit = new();
                 this.syntaxTrees = new();
                 this.syntaxTreeLoadFailures = new();
             }
@@ -49,7 +49,7 @@ namespace Bicep.Core.Syntax
                 this.moduleFailureLookup = new(current.ModuleFailureLookup);
 
                 // TODO: Needs to be recoverable
-                this.modulesRequiringInit = new();
+                this.modulesToInit = new();
 
                 this.syntaxTrees = current.SyntaxTrees.ToDictionary(tree => tree.FileUri);
 
@@ -84,9 +84,10 @@ namespace Bicep.Core.Syntax
 
             return new SyntaxTreeGrouping(
                 entryPoint,
-                syntaxTrees.Values.ToImmutableHashSet(), 
+                syntaxTrees.Values.ToImmutableHashSet(),
                 moduleLookup.ToImmutableDictionary(),
                 moduleFailureLookup.ToImmutableDictionary(),
+                modulesToInit.ToImmutableHashSet(),
                 fileResolver);
         }
 
@@ -150,7 +151,7 @@ namespace Bicep.Core.Syntax
                 {
                     // module is not cached locally
                     moduleFailureLookup[module] = x => x.ModuleRequiresInit(this.dispatcher.GetFullyQualifiedReference(moduleReference));
-                    modulesRequiringInit.Add(module);
+                    modulesToInit.Add(module);
                     continue;
                 }
 

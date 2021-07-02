@@ -27,21 +27,18 @@ namespace Bicep.Core.Registry
 
         public bool IsModuleInitRequired(ModuleReference reference)
         {
-            // TODO: implement after rebasing
-            return true;
+            // TODO: This may need to be updated to account for concurrent processes updating the local cache
+            var typed = ConvertReference(reference);
+
+            // if module is missing, it requires init
+            return !this.fileResolver.Exists(GetEntryPointUri(typed));
         }
 
         public Uri? TryGetLocalModuleEntryPointPath(Uri parentModuleUri, ModuleReference reference, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)
         {
             var typed = ConvertReference(reference);
-            string localArtifactPath = this.orasClient.GetLocalPackageEntryPointPath(typed);
-            if (Uri.TryCreate(localArtifactPath, UriKind.Absolute, out var uri))
-            {
-                failureBuilder = null;
-                return uri;
-            }
-
-            throw new NotImplementedException($"Local OCI artifact path is malformed: \"{localArtifactPath}\"");
+            failureBuilder = null;
+            return GetEntryPointUri(typed);
         }
 
         public void InitModules(IEnumerable<ModuleReference> references)
@@ -58,6 +55,17 @@ namespace Bicep.Core.Registry
             string basePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
             return Path.Combine(basePath, ".bicep", "artifacts");
+        }
+
+        private Uri GetEntryPointUri(OciArtifactModuleReference reference)
+        {
+            string localArtifactPath = this.orasClient.GetLocalPackageEntryPointPath(reference);
+            if (Uri.TryCreate(localArtifactPath, UriKind.Absolute, out var uri))
+            {
+                return uri;
+            }
+
+            throw new NotImplementedException($"Local OCI artifact path is malformed: \"{localArtifactPath}\"");
         }
 
         private static OciArtifactModuleReference ConvertReference(ModuleReference reference)

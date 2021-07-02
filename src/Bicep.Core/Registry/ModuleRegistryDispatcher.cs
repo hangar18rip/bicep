@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 using Bicep.Core.Diagnostics;
+using Bicep.Core.Extensions;
 using Bicep.Core.FileSystem;
 using Bicep.Core.Modules;
+using Bicep.Core.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -95,6 +97,13 @@ namespace Bicep.Core.Registry
             {
                 this.referenceTypeToRegistry[referenceType].InitModules(lookup[referenceType]);
             }
+        }
+
+        public void InitModules(IEnumerable<ModuleDeclarationSyntax> modules)
+        {
+            InitModules(modules
+                .Select(module => this.TryGetModuleReference(module, out _))
+                .WhereNotNull());
         }
 
         // TODO: Once we have some sort of dependency injection in the CLI, this could be simplified

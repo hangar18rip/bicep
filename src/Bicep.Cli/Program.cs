@@ -169,8 +169,8 @@ namespace Bicep.Cli
             var fileResolver = new FileResolver();
             var dispatcher = new ModuleRegistryDispatcher(fileResolver);
             var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, dispatcher, new Workspace(), PathHelper.FilePathToFileUrl(bicepPath));
-            var refs = ExternalReferenceCollector.Collect(syntaxTreeGrouping, dispatcher);
-            dispatcher.InitModules(refs);
+
+            dispatcher.InitModules(syntaxTreeGrouping.ModulesToInit);
 
             // TODO: This should reuse ASTs and possibly other data as well
             syntaxTreeGrouping = SyntaxTreeGroupingBuilder.Build(fileResolver, dispatcher, new Workspace(), PathHelper.FilePathToFileUrl(bicepPath));
